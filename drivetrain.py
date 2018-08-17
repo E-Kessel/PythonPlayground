@@ -18,7 +18,6 @@ import matplotlib.pyplot as plot
 import numpy as np
 import math
 
-
 # The following constants define the drivetrain being modeled:
 
 #set xstop=15
@@ -142,8 +141,8 @@ def Heun(): # numerical integration using Heun's Method
         a[i] = accel(Vtmp,i);  # update a
         x[i] = x[i-1] + (V[i-1]+Vtmp)/2*dt;  # update x trapezoidally
         V[i] = Vtmp;            # update V
-        if (a[i] < 0.05): # Not really getting much faster. Stop the sim when acceleration is under 5 cm/s^2
-            break
+        #if (a[i] < 0.05): # Not really getting much faster. Stop the sim when acceleration is under 5 cm/s^2
+           # break
         i = i + 1
         #print();
 
