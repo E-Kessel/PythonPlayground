@@ -239,6 +239,8 @@ while myInt.successful() and myInt.t < tstop and myInt.y[1] > 0 and i < len(ts):
     Fx[i,shotput_index] = Fdrag(vx[i,shotput_index],Cd, A_shotput_m2, rho_kgpm3)
     Fy[i,shotput_index] = Fdrag(vy[i,shotput_index],Cd, A_shotput_m2, rho_kgpm3)
     i = i + 1
+    
+    #print("%3.1f %% Simulated" % (i / len(ts) * 100.0))
 
 # Change the parameters to run the integrator on the whiffle ball-like object
 myInt.set_initial_value(s0, t0).set_f_params(Cd, A_whiffle_m2, m_whiffle_kg, rho_kgpm3)
@@ -256,6 +258,8 @@ while myInt.successful() and myInt.t < tstop and myInt.y[1] > 0 and j < len(ts):
     Fx[j,whiffle_index] = Fdrag(vx[j,whiffle_index],Cd, A_whiffle_m2, rho_kgpm3)
     Fy[j,whiffle_index] = Fdrag(vy[j,whiffle_index],Cd, A_whiffle_m2, rho_kgpm3)
     j = j + 1
+    
+    #print("%3.1f %% Simulated" % (j / len(ts) * 100.0))
 
     
 pl.figure(1)

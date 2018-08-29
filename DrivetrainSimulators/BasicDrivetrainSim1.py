@@ -33,7 +33,7 @@ class simulationConstants:
     # NOTE: Constructor takes cm as argument for wheel radius, stores as meters
     def __init__(self, aMass_kg, aCfS, aCfK, aRatio, aRadius_cm,\
                  aMotor, aNumMotors, aGrC_Nm, aGeC, aRrC_Npmps,\
-                 aBattVolts, aSimTime_s = 3.0, aDT_s = 0.001,\
+                 aBattVolts, aSimTime_s = 1.5, aDT_s = 0.001,\
                  aRbatt_O = 0.013, aRmotor_O = 0.002):
         self.mass_kg = aMass_kg     # robot mass - kg
         self.frictionStatic = aCfS  # static friction coefficient
@@ -136,10 +136,10 @@ class simulationData:
             i += 1
     
 if __name__ == '__main__':
-    my_Consts = simulationConstants(59.0,               # robot mass (kg)
+    my_Consts = simulationConstants(60.0,               # robot mass (kg)
                                     1.0,                # static friction coefficient
                                     0.8,                # dynamic friction coefficient
-                                    7.00,               # gearbox ratio
+                                    10.00,               # gearbox ratio
                                     7.62,               # wheel radius (cm)
                                     motors['CIM'],      # gearbox motor
                                     4,                  # number of motors
@@ -147,8 +147,8 @@ if __name__ == '__main__':
                                     0.9,                # gearbox efficiency coefficient
                                     0.001,              # rolling resistance constant (N/(m/s))
                                     12.7)               # battery starting volatge (V)
-                                    #9.0)                # maximum simulation time (s)
-                                                        # simulation timestep (s)
+                                    #1.5,                # maximum simulation time (s)
+                                    #0.001)              # simulation timestep (s)
                                                         # battery circut resistance (ohms)
                                                         # motor circut resistance (ohms)                                                        
     simData = simulationData(my_Consts)
@@ -163,6 +163,6 @@ if __name__ == '__main__':
               simData.timeStamps_s, simData.a_mps2,
               simData.timeStamps_s, simData.slip,
               simData.timeStamps_s, simData.motorVoltage,
-              simData.timeStamps_s, simData.motorCurrent/5)
-    plot.legend(['D','V','A','Slip','Volts','Amps/5'])
+              simData.timeStamps_s, simData.motorCurrent/10)
+    plot.legend(['D','V','A','Slip','Volts','Amps/10'])
     
