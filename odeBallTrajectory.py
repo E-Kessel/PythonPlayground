@@ -147,28 +147,37 @@ def Fbouyancy(V,rho):
     return rho*V*const.g
 
 """
-F is the total force due to drag and buoyancy
+Fmagnus is the magnus force on the spinning ball
 
-NOTE: We have not included the Magnus effect for a rotating ball, yet
-      Fundamentally to get the Magnus effect we can approximate the
-      lift as described here: https://www.grc.nasa.gov/www/k-12/VirtualAero/BottleRocket/airplane/beach.html
-      This derived from the description of Kutta-Joukowski lift on a rotating
-      cylinder
+  Fundamentally to get the Magnus effect we can approximate the
+  lift as described here: https://www.grc.nasa.gov/www/k-12/VirtualAero/BottleRocket/airplane/beach.html
+  This derived from the description of Kutta-Joukowski lift on a rotating
+  cylinder
+  
+  F/L = r * v * G
+  
+  where G is vortex strength (basically the rotation creating a radial pressure gradient
+  that induced the pressure drop that causes the force on the object)
+  
+  G = 2*rho*r^2 * w
+  w = rotation rate
+  
+  The force produced by the rotation in a flow is then:
       
-      F/L = r * v * G
-      
-      where G is vortex strength (basically the rotation creating a radial pressure gradient
-      that induced the pressure drop that causes the force on the object)
-      
-      G = 2*p*r^2 * w
-      w = rotation rate
-      
-      The force produced by the rotation in a flow is then:
-          
-      F = (r * G * V) * (2 * b) * (pi / 4)
-      
-      b = ball radius = r, the cylinder radius
-      
+  F = (r * G * v) * (2 * b) * (pi / 4)
+  
+  b = ball radius = r, the cylinder radius
+"""
+def Fmagnus(v,r,w,rho):
+    G = 2.0 * rho * (r**2) * w
+    return (r * G * v) * 2.0 * r * const.pi / 4.0
+
+"""
+F is the total force due to drag and buoyancy, a convenience function
+for initialization
+
+NOTE: We have not included the Magnus effect for a rotating ball because
+it needs to be incorporated perpendicular to the velocity     
 """
 def F(v,Cd,A,V,rho):
     return Fdrag(v, Cd, A, rho) + Fbouyancy(V, rho)
@@ -177,7 +186,7 @@ def F(v,Cd,A,V,rho):
 f is the system of equations we want to model with arguments for parameterizing
 the system
 """
-def f(t, s, Cd, A, V, m, rho_fluid, rho_object):
+def f(t, s, Cd, A, V, m, rho_fluid, rho_object, r, w):
     # Prevent downward velocity from exceeding terminal velocity
     # This prevent the integrator from exceeding physics before
     # it is incorporated into the next step
@@ -189,8 +198,8 @@ def f(t, s, Cd, A, V, m, rho_fluid, rho_object):
     if (vy < -vterminal):
         vy = -vterminal
         
-    ax = Fdrag(vx, Cd, A, rho_fluid)/m
-    ay = (Fdrag(vy, Cd, A, rho_fluid) + Fbouyancy(V, rho_fluid))/m
+    ax = (Fdrag(vx, Cd, A, rho_fluid) - Fmagnus(vy,r,w,rho_fluid))/m
+    ay = (Fdrag(vy, Cd, A, rho_fluid) + Fbouyancy(V, rho_fluid) + Fmagnus(vx,r,w,rho_fluid))/m
     
     return [vx, 
             vy, 
@@ -206,24 +215,27 @@ Cd = 0.5            # Smooth sphere drag coefficient at Re between approximately
 # https://www.topendsports.com/resources/equipment-ball-size.htm
 m_shotput_kg = 7.26         # Men's shot put mass in Kg
 d_shotput_m = 0.120         # Average diameter of shot put in meters (m)
-A_shotput_m2 = const.pi * (d_shotput_m / 2.0)**2   # Cross section area of shot put m^2
-V_shotput_m3 = (4.0/3.0)*const.pi*(d_shotput_m / 2.0)**3
+r_shotput_m = d_shotput_m / 2.0
+A_shotput_m2 = const.pi * r_shotput_m**2   # Cross section area of shot put m^2
+V_shotput_m3 = (4.0/3.0) * const.pi * r_shotput_m**3
 rho_shotput_kgpm3 = m_shotput_kg/V_shotput_m3
 
 
 # plastic ball mass and diameter but NOT the aerodynamic characterstics
 m_plastic_kg = 0.045        # Average plastic ball mass in Kg
 d_plastic_m = 0.0765        # Average diameter of plastic ball in meters (m)
-A_plastic_m2 = const.pi * (d_plastic_m / 2.0)**2   # Cross section area of plastic m^2
-V_plastic_m3 = (4.0/3.0)*const.pi*(d_plastic_m / 2.0)**3
+r_plastic_m = d_plastic_m/ 2.0
+A_plastic_m2 = const.pi * r_plastic_m**2   # Cross section area of plastic m^2
+V_plastic_m3 = (4.0/3.0) * const.pi * r_plastic_m**3
 m_plastic_kg += V_plastic_m3 * rho_kgpm3    # Air inside sealed ball
 rho_plastic_kgpm3 = m_plastic_kg/V_plastic_m3
 
 # WBeach ball mass and diameter
 m_beach_kg = 0.022         # Average 12" Beach ball mass in Kg
 d_beach_m = 0.3048         # Average diameter of beach ball in meters (m)
-A_beach_m2 = const.pi * (d_beach_m / 2.0)**2   # Cross section area of beach ball m^2
-V_beach_m3 = (4.0/3.0)*const.pi*(d_beach_m / 2.0)**3
+r_beach_m = d_beach_m / 2.0
+A_beach_m2 = const.pi * r_beach_m**2   # Cross section area of beach ball m^2
+V_beach_m3 = (4.0/3.0) * const.pi * r_beach_m**3
 m_beach_kg += V_beach_m3 * rho_kgpm3        # Air inside sealed ball
 rho_beach_kgpm3 = m_beach_kg/V_beach_m3
 
@@ -235,6 +247,9 @@ v0_mp2 = 15
 ang0_deg = 37
 ang0_rad = ang0_deg * const.pi / 180.0
 
+# NOTE: POSITIVE value is backspin
+w_radpsec = 7.0 * (2.0 * const.pi)  
+
 s0 = [0.0,
       2.0,
       v0_mp2 * math.cos(ang0_rad),
@@ -242,7 +257,7 @@ s0 = [0.0,
 
 t0 = 0.0
 dt = 0.01
-tstop = 10.0
+tstop = 100.0
 
 # Create some arrays for storage so we can plot results later
 # and set the initial conditions from the above s0 state
@@ -287,7 +302,7 @@ Fy[0,beach_index]   = F(vy[0,beach_index],Cd, A_beach_m2, V_beach_m3, rho_kgpm3)
 # We'll explain that some other day
 
 myInt = ode(f).set_integrator('dopri5')
-myInt.set_initial_value(s0, t0).set_f_params(Cd, A_shotput_m2, V_shotput_m3, m_shotput_kg, rho_kgpm3, rho_shotput_kgpm3)
+myInt.set_initial_value(s0, t0).set_f_params(Cd, A_shotput_m2, V_shotput_m3, m_shotput_kg, rho_kgpm3, rho_shotput_kgpm3, r_shotput_m, w_radpsec)
 
 # Run the integrator until the shot put hits the ground
 # Note: While I like using the variable 's' for state, the integrator
@@ -305,11 +320,9 @@ while myInt.successful() and myInt.t < tstop and myInt.y[1] > 0 and i < len(ts):
     Fx[i,shotput_index] = Fdrag(vx[i,shotput_index],Cd, A_shotput_m2, rho_kgpm3)
     Fy[i,shotput_index] = Fdrag(vy[i,shotput_index],Cd, A_shotput_m2, rho_kgpm3)
     i = i + 1
-    
-    #print("%3.1f %% Simulated" % (i / len(ts) * 100.0))
 
 # Change the parameters to run the integrator on the plastic ball-like object
-myInt.set_initial_value(s0, t0).set_f_params(Cd, A_plastic_m2, V_plastic_m3, m_plastic_kg, rho_kgpm3, rho_plastic_kgpm3)
+myInt.set_initial_value(s0, t0).set_f_params(Cd, A_plastic_m2, V_plastic_m3, m_plastic_kg, rho_kgpm3, rho_plastic_kgpm3, r_plastic_m, w_radpsec)
 
 # Run the integrator until the plastic hits the ground
 j = 1
@@ -324,11 +337,9 @@ while myInt.successful() and myInt.t < tstop and myInt.y[1] > 0 and j < len(ts):
     Fx[j,plastic_index] = Fdrag(vx[j,plastic_index],Cd, A_plastic_m2, rho_kgpm3)
     Fy[j,plastic_index] = Fdrag(vy[j,plastic_index],Cd, A_plastic_m2, rho_kgpm3)
     j = j + 1
-    
-    #print("%3.1f %% Simulated" % (j / len(ts) * 100.0))
 
 # Change the parameters to run the integrator on the beach ball
-myInt.set_initial_value(s0, t0).set_f_params(Cd, A_beach_m2, V_beach_m3, m_beach_kg, rho_kgpm3, rho_beach_kgpm3)
+myInt.set_initial_value(s0, t0).set_f_params(Cd, A_beach_m2, V_beach_m3, m_beach_kg, rho_kgpm3, rho_beach_kgpm3, r_beach_m, w_radpsec)
 
 # Run the integrator until the beach ball hits the ground
 k = 1
