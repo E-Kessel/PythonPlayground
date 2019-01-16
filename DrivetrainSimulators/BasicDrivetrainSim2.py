@@ -24,10 +24,11 @@ class motor:    # NOTE: constructor takes RPM as argument for free speed, stores
         return self.speedFree_rps / (2 * const.pi) * 60
 
     # free speed (RPM), stall current (A), stall torque (N*m), (spec voltage (V))  
-motors = {'CIM':     motor(5330,  131, 2.41),\
-          'MiniCIM': motor(5840,  89,  1.41),\
-          'BAG':     motor(13180, 53,  0.43),\
-          '775Pro':  motor(18730, 134, 0.71)}
+motors = {'CIM':     motor(5330,  131, 2.41),
+          'MiniCIM': motor(5840,  89,  1.41),
+          'BAG':     motor(13180, 53,  0.43),
+          '775Pro':  motor(18730, 134, 0.71),
+          'NEO':     motor(5778,  1,   2.65)}
 
 def ramp(i, l, m = 1):
     if (i >= l):
@@ -105,6 +106,8 @@ class simulationData:
         self.a_mps2 = np.zeros(len(self.timeStamps_s))
         
         self.a_mps2[0] = self.accel(0, 0)
+        
+        self.dist_flag = False
     
     def accel(self, iVelo, i):
         self.gear[i] = self.gear[i-1]
@@ -150,21 +153,31 @@ class simulationData:
                 self.gear[i] = 1
             
             self.simLength = i
-            if (self.a_mps2[i] <= 0.1 and i > 1500):
-                print("Acceration reached threshold, terminating simulation.")
+            if (self.d_m[i] > target_dist and self.dist_flag == False):
+                print("Reached target distance of", target_dist, "m in ", self.simLength * self.simConsts.simTimeStep_s, "s")
+                self.dist_flag = True
+            if (self.a_mps2[i] <= 0.1 and i > 1500 and self.dist_flag == True):
+                print("Acceration reached cut-off threshold, terminating simulation.")
                 break
             
             i += 1
 
-configs = (((24.000,9.067), 0.205),
-           ((19.608,9.067), 0.205),
-           ((18.750,7.083), 0.205),
-           ((15.319,7.083), 0.205))
+target_dist = 9.144  # meters (25ft)
+
+configs = (((12,12), 0.25),
+           ((11,11), 0.25),
+           ((10,10), 0.25),
+           ((9,9), 0.25),
+           ((8,8), 0.25),
+           ((7,7), 0.25)) #(((24.000,9.067), 0.205),
+           #((19.608,9.067), 0.205),
+           #((18.750,7.083), 0.205),
+           #((15.319,7.083), 0.205))
     
 if __name__ == '__main__':
     for cfx in configs:
-        print("Starting simulation, configs are ", cfx)
-        my_Consts = simulationConstants(60.0,               # robot mass (kg)
+        print("Starting simulation, configs are", cfx)
+        my_Consts = simulationConstants(50.0,               # robot mass (kg)
                                         1.0,                # static friction coefficient
                                         0.8,                # dynamic friction coefficient
                                         cfx[0],             # gearbox ratios
@@ -201,13 +214,18 @@ if __name__ == '__main__':
         print("Time Elapsed (s): ", simData.simLength * my_Consts.simTimeStep_s)
         plot.show()
         
-        print("Spd @ T=0.4 (m/s):   ", simData.v_mps[400])
-        print("Spd @ T=0.4 (ft/s):  ", simData.v_mps[400] * 3.28084)
-        print("Dist @ T=0.4 (m):    ", simData.d_m[400])
-        print("Dist @ T=0.4 (ft):   ", simData.d_m[400] * 3.28084, "\n")
+        #print("Spd @ T=0.5 (m/s):   ", simData.v_mps[500])
+        print("Spd @ T=0.5 (ft/s):  ", simData.v_mps[500] * 3.28084)
+        #print("Dist @ T=0.5 (m):    ", simData.d_m[500])
+        print("Dist @ T=0.5 (ft):   ", simData.d_m[500] * 3.28084, "\n")
         
-        print("Final Speed (m/s):   ", simData.v_mps[simData.simLength])
+        #print("Spd @ T=1.5 (m/s):   ", simData.v_mps[1500])
+        print("Spd @ T=1.5 (ft/s):  ", simData.v_mps[1500] * 3.28084)
+        #print("Dist @ T=1.5 (m):    ", simData.d_m[1500])
+        print("Dist @ T=1.5 (ft):   ", simData.d_m[1500] * 3.28084, "\n")
+        
+        #print("Final Speed (m/s):   ", simData.v_mps[simData.simLength])
         print("Final Speed (ft/s):  ", simData.v_mps[simData.simLength] * 3.28084)
-        print("Final Distance (m):  ", simData.d_m[simData.simLength])
+        #print("Final Distance (m):  ", simData.d_m[simData.simLength])
         print("Final Distance (ft): ", simData.d_m[simData.simLength] * 3.28084, "\n\n")
     

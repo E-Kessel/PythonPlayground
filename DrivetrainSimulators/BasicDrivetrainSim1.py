@@ -24,10 +24,17 @@ class motor:    # NOTE: constructor takes RPM as argument for free speed, stores
         return self.speedFree_rps / (2 * const.pi) * 60
 
     # free speed (RPM), stall current (A), stall torque (N*m), (spec voltage (V))  
-motors = {'CIM':     motor(5330,  131, 2.41),\
-          'MiniCIM': motor(5840,  89,  1.41),\
-          'BAG':     motor(13180, 53,  0.43),\
-          '775Pro':  motor(18730, 134, 0.71)}
+motors = {'CIM':     motor(5330,  131, 2.41),
+          'MiniCIM': motor(5840,  89,  1.41),
+          'BAG':     motor(13180, 53,  0.43),
+          '775Pro':  motor(18730, 134, 0.710),
+          'NEO':     motor(5778,  1,   2.65)}
+
+def ramp(i, l, m = 1):
+    if (i >= l):
+        return m
+    else:
+        return (i / l) * m
 
 class simulationConstants:
     # NOTE: Constructor takes cm as argument for wheel radius, stores as meters
@@ -97,7 +104,7 @@ class simulationData:
     
     def accel(self, iVelo, i):
         motorSpeed_rps = iVelo / self.simConsts.wheelRadius_m * self.simConsts.ratio
-        motorTorque_Nm = self.simConsts.torqueOffset_Nm - self.simConsts.torqueSlope_Nmprps * motorSpeed_rps
+        motorTorque_Nm = ramp(i,250) * (self.simConsts.torqueOffset_Nm - self.simConsts.torqueSlope_Nmprps * motorSpeed_rps)
         wheelTorque_Nm = motorTorque_Nm * self.simConsts.ratio * self.simConsts.gearboxEfficiency
         wheelForce_N = wheelTorque_Nm / self.simConsts.wheelRadius_m * self.simConsts.numMotors
         
@@ -139,15 +146,15 @@ if __name__ == '__main__':
     my_Consts = simulationConstants(60.0,               # robot mass (kg)
                                     1.0,                # static friction coefficient
                                     0.8,                # dynamic friction coefficient
-                                    10.00,               # gearbox ratio
+                                    7,               # gearbox ratio
                                     7.62,               # wheel radius (cm)
                                     motors['CIM'],      # gearbox motor
                                     4,                  # number of motors
                                     10.0,               # gearbox resistance constant (N*m)?
                                     0.9,                # gearbox efficiency coefficient
                                     0.001,              # rolling resistance constant (N/(m/s))
-                                    12.7)               # battery starting volatge (V)
-                                    #1.5,                # maximum simulation time (s)
+                                    12.7,               # battery starting volatge (V)
+                                    2.5)                # maximum simulation time (s)
                                     #0.001)              # simulation timestep (s)
                                                         # battery circut resistance (ohms)
                                                         # motor circut resistance (ohms)                                                        
